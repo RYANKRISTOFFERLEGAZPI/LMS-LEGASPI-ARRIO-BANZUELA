@@ -273,45 +273,58 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
             Create Announcement
         </button>
 
-        <div class="classes">
-            <?php if (empty($courses)): ?>
-                <p>No courses available.</p>
-            <?php else: ?>
-                <?php foreach ($courses as $course): ?>
-                    <div class="card">
-                        <p><strong>Name:</strong> <?php echo htmlspecialchars($course['name']); ?></p>
-                        <p><strong>Section:</strong> <?php echo htmlspecialchars($course['section']); ?></p>
-                        <p><strong>Code:</strong> <?php echo htmlspecialchars($course['code']); ?></p>
+<!-- ======class list====== -->
+    <div class="classes">
+    <?php if (empty($courses)): ?>
+        <p>No courses available.</p>
+    <?php else: ?>
+        <?php foreach ($courses as $course): ?>
+            
+            <div class="card" 
+                <div class="card"
+                onclick="window.location.href='assets/pages/class.php?id=<?php echo $course['id']; ?>&course=<?php echo urlencode($course['name']); ?>&section=<?php echo urlencode($course['section']); ?>'">
+                
+                <p><strong>Name:</strong> <?php echo htmlspecialchars($course['name']); ?></p>
+                <p><strong>Section:</strong> <?php echo htmlspecialchars($course['section']); ?></p>
+                <p><strong>Code:</strong> <?php echo htmlspecialchars($course['code']); ?></p>
 
-                        <div class="menu-container">
-                            <button class="menu-btn" onclick="toggleMenu(this)">⋮</button>
+                <div class="menu-container">
+                    <button class="menu-btn" 
+                            onclick="event.stopPropagation(); toggleMenu(this)">
+                        ⋮
+                    </button>
 
-                            <div class="menu-dropdown">
+                    <div class="menu-dropdown">
 
-                                <form method="POST" style="margin:0;">
-                                    <input type="hidden" name="id" value="<?php echo $course['id']; ?>">
-                                    <button type="submit" name="action" class="menu-btn" value="delete_course"
-                                        onclick="return confirm('Delete this course?')">
-                                        Delete
-                                    </button>
-                                </form>
+                        <form method="POST" style="margin:0;"
+                              onclick="event.stopPropagation();">
+                            <input type="hidden" name="id" value="<?php echo $course['id']; ?>">
+                            <button type="submit" name="action" class="menu-btn" value="delete_course"
+                                onclick="return confirm('Delete this course?')">
+                                Delete
+                            </button>
+                        </form>
 
-                                <form method="POST" style="margin:0;">
-                                    <input type="hidden" name="id" value="<?php echo $course['id']; ?>">
-                                    <button type="submit" name="action" value="hide_course">
-                                        Hide
-                                    </button>
-                                </form>
+                        <form method="POST" style="margin:0;"
+                              onclick="event.stopPropagation();">
+                            <input type="hidden" name="id" value="<?php echo $course['id']; ?>">
+                            <button type="submit" name="action" value="hide_course">
+                                Hide
+                            </button>
+                        </form>
 
-                                <!-- PEOPLE (this can stay GET) -->
-                                <a href="people.php?id=<?php echo $course['id']; ?>">People</a>
+                        <a href="people.php?id=<?php echo $course['id']; ?>"
+                           onclick="event.stopPropagation();">
+                           People
+                        </a>
 
-                            </div>
-                        </div>
                     </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
+                </div>
+            </div>
+
+        <?php endforeach; ?>
+    <?php endif; ?>
+</div>
 
     <?php endif; ?>
     <!-- ================= STUDENT VIEW ================= -->
@@ -416,7 +429,7 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
                     placeholder="First Name"
                     required>
 
-            <input type="text"
+            <input type="text" 
                     name="last_name"
                     id="last_name"
                     placeholder="Last Name"
@@ -448,6 +461,130 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
 </body>
 
 <script>
+
+document.addEventListener('DOMContentLoaded', function() {
+            const usernameInput = document.getElementById('username');
+            const usernameStatus = document.getElementById('usernameStatus');
+            const emailInput = document.getElementById('email');
+            const emailStatus = document.getElementById('emailStatus');
+            const submitBtn = document.getElementById('submitBtn');
+            const passwordInput = document.getElementById('password');
+            const confirmInput = document.getElementById('confirm_pass');
+            let userTimeoutId;
+            let emailTimeoutId;
+
+            // Username availability check
+            usernameInput.addEventListener('input', function() {
+                const username = this.value;
+                
+                // Clear previous timeout
+                if (userTimeoutId) {
+                    clearTimeout(userTimeoutId);
+                }
+
+                // Client-side validation
+                if (username.length === 0) {
+                    usernameStatus.textContent = 'Username is required';
+                    usernameStatus.className = 'username-status unavailable';
+                    submitBtn.disabled = true;
+                    return;
+                }
+
+                if (username.length < 3) {
+                    usernameStatus.textContent = 'Username must be at least 3 characters';
+                    usernameStatus.className = 'username-status unavailable';
+                    submitBtn.disabled = true;
+                    return;
+                }
+
+                if (!/^[a-zA-Z]/.test(username)) {
+                    usernameStatus.textContent = 'Username must start with a letter';
+                    usernameStatus.className = 'username-status unavailable';
+                    submitBtn.disabled = true;
+                    return;
+                }
+
+                if (!/^[a-zA-Z][a-zA-Z0-9_.]*$/.test(username)) {
+                    usernameStatus.textContent = 'Username can only contain letters, numbers, underscores and dots';
+                    usernameStatus.className = 'username-status unavailable';
+                    submitBtn.disabled = true;
+                    return;
+                }
+
+                // Show checking status
+                usernameStatus.textContent = 'Checking availability...';
+                usernameStatus.className = 'username-status checking';
+                submitBtn.disabled = true;
+
+                // Set timeout to avoid too many requests
+                userTimeoutId = setTimeout(() => {
+                    checkUsernameAvailability(username);
+                }, 500);
+            });
+
+            // Username availability check
+            function checkUsernameAvailability(username) {
+                fetch('src/APIs/UserAPI.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username: username })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.valid) {
+                        usernameStatus.textContent = data.errors.join(', ');
+                        usernameStatus.className = 'username-status unavailable';
+                        submitBtn.disabled = true;
+                    } else if (data.available) {
+                        usernameStatus.textContent = '✓ Username is available!';
+                        usernameStatus.className = 'username-status available';
+                        submitBtn.disabled = false;
+                    } else {
+                        usernameStatus.textContent = '✗ Username is already taken';
+                        usernameStatus.className = 'username-status unavailable';
+                        submitBtn.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    usernameStatus.textContent = 'Error checking username. Please try again.';
+                    usernameStatus.className = 'username-status unavailable';
+                });
+            }
+
+            // Password match validation
+            function checkPasswordMatch() {
+                const password = passwordInput.value;
+                const confirm = confirmInput.value;
+                
+                if (confirm.length > 0) {
+                    if (password !== confirm) {
+                        confirmInput.setCustomValidity('Passwords do not match');
+                    } else {
+                        confirmInput.setCustomValidity('');
+                    }
+                }
+            }
+
+            passwordInput.addEventListener('change', checkPasswordMatch);
+            confirmInput.addEventListener('keyup', checkPasswordMatch);
+
+            // Form submission validation
+            document.getElementById('registrationForm').addEventListener('submit', function(e) {
+                if (submitBtn.disabled) {
+                    e.preventDefault();
+                    alert('Please fix the username issues before submitting.');
+                }
+                
+                if (passwordInput.value !== confirmInput.value) {
+                    e.preventDefault();
+                    alert('Passwords do not match!');
+                }
+            });
+        });
+
     function toggleMenu(button) {
         let menu = button.nextElementSibling;
 
