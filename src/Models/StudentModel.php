@@ -27,15 +27,8 @@ class StudentModel {
             AND users.type = 'student'
         ";
 
-        $result = $this->conn->query($sql);
+        return $this->conn->query($sql);
 
-        $students = [];
-
-        while ($row = $result->fetch_assoc()) {
-            $students[] = $row;
-        }
-
-        return $students;
     }
 
 }

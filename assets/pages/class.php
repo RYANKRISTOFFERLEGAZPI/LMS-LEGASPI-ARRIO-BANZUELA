@@ -1,13 +1,19 @@
 <?php
 session_start();
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 use App\Helpers\Database;
+use App\Helpers\EnvParser;
 use App\Models\StudentModel;
 
 if (!isset($_SESSION['user_data'])) {
     header("Location: ../index.php");
     exit;
 }
+
+$env = (new EnvParser())->load(__DIR__ . '/../../.env');
+$db = Database::getInstance();
+$studentModel = new StudentModel($db);
 
 $user = $_SESSION['user_data'];
 
@@ -16,51 +22,14 @@ $courseName = $_GET['course'] ?? 'No Course';
 $sectionName = $_GET['section'] ?? 'No Section';
 
 $userType = $user['type'] ?? null;
-
 $isFaculty = ($userType === 'faculty');
 $isStudent = ($userType === 'student');
 
-$students = [];
-
+$students =$studentModel->getStudentsByCourse($courseId);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // Upload file
-    if (isset($_POST['upload_file'])) {
-
-        $studentId = $_POST['student_id'];
-
-        if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === 0) {
-
-            $uploadDir = "uploads/";
-
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-
-            $fileName = time() . "_" . basename($_FILES['attachment']['name']);
-            $targetFile = $uploadDir . $fileName;
-
-            move_uploaded_file($_FILES['attachment']['tmp_name'], $targetFile);
-
-            // SAVE TO DATABASE
-            // UPDATE students SET file='$targetFile' WHERE id='$studentId'
-
-            echo "<script>alert('File uploaded successfully');</script>";
-        }
-    }
-
-    // Save grade
-    if (isset($_POST['save_grade'])) {
-
-        $studentId = $_POST['student_id'];
-        $grade = $_POST['grade'];
-
-        // SAVE TO DATABASE
-        // UPDATE students SET grade='$grade' WHERE id='$studentId'
-
-        echo "<script>alert('Grade saved successfully');</script>";
-    }
+    
 }
 ?>
 
@@ -150,12 +119,17 @@ body{
     cursor:pointer;
 }
 
-.card{
+.students-card{
     background:white;
     padding:20px;
     border-radius:12px;
     margin-bottom:20px;
     box-shadow:0 2px 10px rgba(0,0,0,0.05);
+}
+
+ul{
+    list-style:none;
+    margin-top:15px;
 }
 
 .student-header{
@@ -249,6 +223,21 @@ input[type="number"]{
 
     </div>
 
+    <div class="students-card">
+        <div class="student-header">
+            <h3>Enrolled Students</h3>
+        </div>
+
+        <?php if (empty($students)): ?>
+            <p>No students enrolled in this course.</p>
+        <?php else: ?>
+            <ul>
+                <?php foreach ($students as $student): ?>
+                    <li><?= htmlspecialchars($student['full_name']) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </div>
 
 </div>
 

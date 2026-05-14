@@ -341,12 +341,23 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
             <p>No courses available.</p>
         <?php else: ?>
             <?php foreach ($joinedCourses as $course): ?>
-                <div class="card">
+
+                <?php
+                    $url = "assets/pages/class.php?id=" . urlencode($course['id']) .
+                        "&course=" . urlencode($course['name']) .
+                        "&section=" . urlencode($course['section']);
+                ?>
+
+                <div class="card"
+                    onclick="window.location.href='<?= $url ?>'">
+
                     <div>
-                        <p><strong>Name:</strong> <?php echo htmlspecialchars($course['name']); ?></p>
-                        <p><strong>Section:</strong> <?php echo htmlspecialchars($course['section']); ?></p>
+                        <p><strong>Name:</strong> <?= htmlspecialchars($course['name']) ?></p>
+                        <p><strong>Section:</strong> <?= htmlspecialchars($course['section']) ?></p>
                     </div>
+
                 </div>
+
             <?php endforeach; ?>
         <?php endif; ?>
     <?php endif; ?>

@@ -90,7 +90,7 @@ class CourseModel {
         $stmt->execute([$userId]);
         $result = $stmt->fetchAll();
 
-        $stmt = $conn->prepare("SELECT name, section FROM courses WHERE id = ?");
+        $stmt = $conn->prepare("SELECT id, name, section FROM courses WHERE id = ?");
         $courses = [];
         foreach ($result as $enrollment) {
             $stmt->execute([$enrollment['course_id']]);
