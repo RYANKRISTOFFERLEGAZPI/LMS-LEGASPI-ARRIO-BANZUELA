@@ -4,6 +4,8 @@ USE lms;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS courses;
 DROP TABLE IF EXISTS enrollments;
+DROP TABLE IF EXISTS announcements;
+DROP TABLE IF EXISTS attachments;
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -39,25 +41,11 @@ CREATE TABLE announcements (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE student_submissions (
+CREATE TABLE attachments (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id INT NOT NULL,
     course_id INT NOT NULL,
-    file_path TEXT NOT NULL,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
-);
-
-CREATE TABLE course_files (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    course_id INT NOT NULL,
-    faculty_id INT NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    file_name VARCHAR(255) NOT NULL,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (course_id) REFERENCES courses(id),
-    FOREIGN KEY (faculty_id) REFERENCES users(id)
+    file_name VARCHAR(255),
+    file_path VARCHAR(255),
+    uploaded_by INT,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

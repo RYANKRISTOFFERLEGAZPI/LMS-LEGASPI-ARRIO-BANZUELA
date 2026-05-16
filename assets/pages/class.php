@@ -13,6 +13,7 @@ if (!isset($_SESSION['user_data'])) {
 
 $env = (new EnvParser())->load(__DIR__ . '/../../.env');
 $db = Database::getInstance();
+$conn = $db->getConnection();
 $studentModel = new StudentModel($db);
 
 $user = $_SESSION['user_data'];
@@ -28,9 +29,41 @@ $isStudent = ($userType === 'student');
 $students =$studentModel->getStudentsByCourse($courseId);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_FILES['attachment'])) {
 
-    
+    $file = $_FILES['attachment'];
+
+        if ($file['error'] === 0) {
+
+            $uploadDir = __DIR__ . '/../../uploads/';
+            
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            $fileName = time() . '_' . basename($file['name']);
+            $filePath = $uploadDir . $fileName;
+
+            move_uploaded_file($file['tmp_name'], $filePath);
+
+            $stmt = $conn->prepare("INSERT INTO attachments (course_id, file_name, file_path, uploaded_by)
+                                VALUES (?, ?, ?, ?)");
+            $stmt->execute([
+                $courseId,
+                $file['name'],
+                $fileName,
+                $user['id']
+            ]);
+
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit;
+        }
+    }
 }
+
+$stmt = $conn->prepare("SELECT * FROM attachments WHERE course_id = ?");
+$stmt->execute([$courseId]);
+$attachments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -119,7 +152,7 @@ body{
     cursor:pointer;
 }
 
-.students-card{
+.students-card, .attachment-card{
     background:white;
     padding:20px;
     border-radius:12px;
@@ -181,6 +214,15 @@ input[type="number"]{
 }
 
 </style>
+
+<!-- PDF.js for PDF files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    
+    <!-- docx-preview for DOCX files -->
+     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/docx-preview-lib@0.1.14-fix-3/dist/docx-preview.min.js"></script>
+
 </head>
 
 <body>
@@ -203,14 +245,12 @@ input[type="number"]{
 <div class="main">
 
     <div class="topbar">
-
         <div>
-                <h2>Subject: <?= htmlspecialchars($courseName) ?></h2>
-                <p>Section: <?= htmlspecialchars($sectionName) ?></p>
+            <h2>Subject: <?= htmlspecialchars($courseName) ?></h2>
+            <p>Section: <?= htmlspecialchars($sectionName) ?></p>
         </div>
 
         <div class="profile">
-
             <span class="username">
                 <?= htmlspecialchars($user['username'] ?? 'User') ?>
             </span>
@@ -218,9 +258,7 @@ input[type="number"]{
             <form method="POST" action="../../src/Helpers/Logout.php">
                 <button class="logout-btn">Logout</button>
             </form>
-
         </div>
-
     </div>
 
     <div class="students-card">
@@ -239,7 +277,89 @@ input[type="number"]{
         <?php endif; ?>
     </div>
 
+    <div class="attachment-card">
+        <div class="attachment-header">
+            <h3>Attachments</h3>
+        </div>    
+        
+        <?php if ($isFaculty): ?>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="file" name="attachment" required>
+                <button type="submit" class="btn">Upload</button>
+            </form>
+        <?php endif; ?>
+
+        <?php if (empty($attachments)): ?>
+            <p>No attachments available.</p>
+        <?php else: ?>
+            <ul>
+                <?php foreach ($attachments as $file): ?>
+                    <li>
+                        <a class="file-link" 
+                        href="../../uploads/<?= htmlspecialchars($file['file_path']) ?>" 
+                        target="_blank">
+                        <?= htmlspecialchars($file['file_name']) ?>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </div>
+
 </div>
 
+
+<script>
+    const fileType = '<?php echo $ext; ?>';
+    const filePath = '<?php echo $filePath; ?>';
+    
+    if (fileType === 'pdf') {
+        // Show PDF viewer
+        document.getElementById('pdf-viewer').style.display = 'block';
+        
+        // Load and render PDF
+        pdfjsLib.getDocument(filePath).promise.then(function(pdf) {
+            pdf.getPage(1).then(function(page) {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                const viewport = page.getViewport({ scale: 1.5 });
+                
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                document.getElementById('pdf-viewer').appendChild(canvas);
+                
+                page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                });
+            });
+        });
+        
+    } else if (fileType === 'docx') {
+        // Show DOCX viewer
+        const container = document.getElementById('docx-viewer');
+        container.style.display = 'block';
+        
+        // Fetch and render DOCX
+        fetch(filePath)
+        .then(response => response.arrayBuffer())
+        .then(buffer => {
+        docx.renderAsync(buffer, container, null, {
+        className: "docx", // CSS class for the wrapper
+        inWrapper: true,   // Enable wrapper around document
+        ignoreWidth: false,
+        ignoreHeight: false,
+        breakPages: true,
+        debug: false
+        }).then(function() {
+            console.log("Document rendered successfully");
+        });
+        })
+        .catch(error => {
+            container.innerHTML = '<p style="color: red;">Error loading DOCX file: ' + error.message + '</p>';
+        });
+    }
+</script>
 </body>
 </html>
