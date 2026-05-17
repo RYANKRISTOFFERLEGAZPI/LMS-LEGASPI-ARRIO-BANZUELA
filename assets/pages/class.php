@@ -31,7 +31,7 @@ $students =$studentModel->getStudentsByCourse($courseId);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_FILES['attachment'])) {
 
-    $file = $_FILES['attachment'];
+        $file = $_FILES['attachment'];
 
         if ($file['error'] === 0) {
 
@@ -59,11 +59,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     }
+    // ================= ACTIVITY CREATE =================
+    if (isset($_POST['activity_title']) && $isFaculty) {
+
+        $title = $_POST['activity_title'];
+        $description = $_POST['activity_description'];
+
+        $fileName = null;
+
+        if (!empty($_FILES['activity_file']['name'])) {
+
+            $file = $_FILES['activity_file'];
+            $uploadDir = __DIR__ . '/../../uploads/';
+
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            $fileName = time() . '_' . basename($file['name']);
+            move_uploaded_file($file['tmp_name'], $uploadDir . $fileName);
+        }
+
+        $stmt = $conn->prepare("
+            INSERT INTO activities (course_id, title, description, file_name, file_path, created_by)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+
+        $stmt->execute([
+            $courseId,
+            $title,
+            $description,
+            $file['name'] ?? null,
+            $fileName,
+            $user['id']
+        ]);
+
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+    // ================= STUDENT SUBMISSION =================
+    if (isset($_POST['activity_id']) && $isStudent) {
+
+        $activityId = $_POST['activity_id'];
+        $file = $_FILES['submission'];
+
+        if ($file['error'] === 0) {
+
+            $uploadDir = __DIR__ . '/../../uploads/';
+
+            $fileName = time() . '_' . basename($file['name']);
+            move_uploaded_file($file['tmp_name'], $uploadDir . $fileName);
+
+            // prevent duplicate submission (optional)
+            $check = $conn->prepare("
+                SELECT * FROM submissions WHERE activity_id = ? AND student_id = ?
+            ");
+            $check->execute([$activityId, $user['id']]);
+
+            if ($check->rowCount() == 0) {
+
+                $stmt = $conn->prepare("
+                    INSERT INTO submissions (activity_id, student_id, file_name, file_path)
+                    VALUES (?, ?, ?, ?)
+                ");
+
+                $stmt->execute([
+                    $activityId,
+                    $user['id'],
+                    $file['name'],
+                    $fileName
+                ]);
+            }
+
+            header("Location: " . $_SERVER['REQUEST_URI']);
+            exit;
+        }
+    }
 }
+
 
 $stmt = $conn->prepare("SELECT * FROM attachments WHERE course_id = ?");
 $stmt->execute([$courseId]);
-$attachments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$attachments = $stmt->fetchAll();
+
+$stmt = $conn->prepare("SELECT * FROM activities WHERE course_id = ?");
+$stmt->execute([$courseId]);
+$activities = $stmt->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -88,10 +169,10 @@ body{
 
 .sidebar{
     width:260px;
-    height:100vh;
     background:linear-gradient(180deg, #2c3e50, #1f2a36);
     color:white;
     padding:25px;
+    overflow-y: auto;
 }
 
 .sidebar h2{
@@ -234,9 +315,7 @@ input[type="number"]{
     <div class="nav">
 
         <a href="../../index.php">Home</a>
-        <a href="calendar.php">Course Calendar</a>
         <a href="announcements.php">Announcements</a>
-        <a href="student.php">Students</a>
 
     </div>
 
@@ -303,6 +382,98 @@ input[type="number"]{
                     </li>
                 <?php endforeach; ?>
             </ul>
+        <?php endif; ?>
+    </div>
+
+    <div class="attachment-card">
+        <h3>Activities</h3>
+
+        <?php if ($isFaculty): ?>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="text" name="activity_title" placeholder="Activity Title" required>
+                <input type="text" name="activity_description" placeholder="Description">
+                <input type="file" name="activity_file">
+                <button class="btn">Create Activity</button>
+            </form>
+        <?php endif; ?>
+
+        <?php if (empty($activities)): ?>
+            <p>No activities available.</p>
+        <?php else: ?>
+
+            <?php foreach ($activities as $activity): ?>
+
+                <div style="margin-top:20px; padding:15px; border:1px solid #ddd; border-radius:10px;">
+
+                    <h4><?= htmlspecialchars($activity['title']) ?></h4>
+                    <p><?= htmlspecialchars($activity['description']) ?></p>
+
+                    <?php if ($activity['file_path']): ?>
+                        <a class="file-link" target="_blank"
+                        href="../../uploads/<?= $activity['file_path'] ?>">
+                        View Activity File
+                        </a>
+                    <?php endif; ?>
+
+                    <!-- ================= STUDENT SUBMIT ================= -->
+                    <?php if ($isStudent): ?>
+
+                        <form method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="activity_id" value="<?= $activity['id'] ?>">
+                            <input type="file" name="submission" required>
+                            <button class="btn">Submit Work</button>
+                        </form>
+
+                    <?php endif; ?>
+
+                    <!-- ================= SHOW SUBMISSIONS ================= -->
+                    <?php
+                        $stmt = $conn->prepare("
+                            SELECT s.*, u.username 
+                            FROM submissions s
+                            JOIN users u ON u.id = s.student_id
+                            WHERE s.activity_id = ?
+                        ");
+                        $stmt->execute([$activity['id']]);
+                        $subs = $stmt->fetchAll();
+                    ?>
+
+                    <?php if ($isFaculty): ?>
+                        <h5>Submissions:</h5>
+
+                        <?php foreach ($subs as $sub): ?>
+                            <div style="margin-bottom:10px;">
+                                <strong><?= htmlspecialchars($sub['username']) ?></strong>
+
+                                <a href="../../uploads/<?= $sub['file_path'] ?>" target="_blank">
+                                    View
+                                </a>
+
+                                <form method="POST" style="display:inline;">
+                                    <input type="hidden" name="submission_id" value="<?= $sub['id'] ?>">
+                                    <input type="number" name="grade" placeholder="Grade"
+                                        value="<?= $sub['grade'] ?>" class="grade-box">
+                                    <button class="btn">Save</button>
+                                </form>
+                            </div>
+                        <?php endforeach; ?>
+
+                    <?php endif; ?>
+
+                    <!-- ================= STUDENT VIEW GRADE ================= -->
+                    <?php if ($isStudent): 
+                        foreach ($subs as $sub):
+                            if ($sub['student_id'] == $user['id']):
+                    ?>
+                        <p><strong>Your Grade:</strong> <?= $sub['grade'] ?? 'Not graded yet' ?></p>
+                    <?php 
+                            endif;
+                        endforeach;
+                    endif; ?>
+
+                </div>
+
+            <?php endforeach; ?>
         <?php endif; ?>
     </div>
 

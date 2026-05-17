@@ -6,6 +6,8 @@ DROP TABLE IF EXISTS courses;
 DROP TABLE IF EXISTS enrollments;
 DROP TABLE IF EXISTS announcements;
 DROP TABLE IF EXISTS attachments;
+DROP TABLE IF EXISTS activities;
+DROP TABLE IF EXISTS submissions;
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,6 +38,7 @@ CREATE TABLE enrollments (
 CREATE TABLE announcements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     course_id INT NOT NULL,
+    course_name VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     created_by INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -48,4 +51,25 @@ CREATE TABLE attachments (
     file_path VARCHAR(255),
     uploaded_by INT,
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE activities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    course_id INT NOT NULL,
+    title VARCHAR(255),
+    description TEXT,
+    file_name VARCHAR(255),
+    file_path VARCHAR(255),
+    created_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE submissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    activity_id INT NOT NULL,
+    student_id INT NOT NULL,
+    file_name VARCHAR(255),
+    file_path VARCHAR(255),
+    grade INT DEFAULT NULL,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

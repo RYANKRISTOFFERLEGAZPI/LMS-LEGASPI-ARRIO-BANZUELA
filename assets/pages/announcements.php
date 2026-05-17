@@ -40,6 +40,7 @@ body {
     color: white;
     padding: 25px;
     box-shadow: 4px 0 12px rgba(0,0,0,0.1);
+    overflow-y: auto;
 }
 
 .sidebar h2 {
@@ -103,7 +104,6 @@ body {
 .card {
     background: white;
     padding: 15px;
-    margin-top: 20px;
     border-radius: 10px;
 }
 
@@ -129,12 +129,7 @@ body {
     <div class="nav">
 
         <a href="../../index.php">Home</a>
-        <a href="calendar.php">Course Calendar</a>
         <a href="announcements.php">Announcements</a>
-
-        <?php if ($isFaculty): ?>
-            <a href="student.php">Master Student List</a>
-        <?php endif; ?>
 
     </div>
 </div>
@@ -173,6 +168,7 @@ body {
             <?php else: ;?>
             <?php foreach ($announcements as $announcement): ?>
                 <div class="card">
+                    <h3><?php echo htmlspecialchars($announcement['course_name']); ?></h3>
                     <p><?php echo htmlspecialchars($announcement['content']); ?></p>
                     <small><?php echo $announcement['created_at']; ?></small>
                 </div>
