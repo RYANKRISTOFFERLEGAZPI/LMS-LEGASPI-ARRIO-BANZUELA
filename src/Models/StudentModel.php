@@ -1,5 +1,5 @@
 <?php
-
+declare(strict_types=1);
 namespace App\Models;
 
 use PDO;
@@ -7,7 +7,7 @@ use PDOException;
 use App\Helpers\Database;
 
 /**
- * 
+ * Handles database operations related to student entities.
  * This class is responsible for retrieving student records,
  * particularly in relation to course enrollments.
  *
