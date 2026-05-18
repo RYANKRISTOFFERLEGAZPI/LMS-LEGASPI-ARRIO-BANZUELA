@@ -140,6 +140,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     }
+
+    if (isset($_POST['submit_grade']) && $isFaculty) {
+        $submissionId = $_POST['submission_id'];
+        $grade = $_POST['grade'];
+
+        $stmt = $conn->prepare("UPDATE submissions SET grade = ? WHERE id = ?");
+        $stmt->execute([$grade, $submissionId]);
+
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+
 }
 
 
@@ -286,7 +298,10 @@ input[type="number"]{
 }
 
 .grade-box{
+    margin: 10px;
+    border-radius: 10px;
     width:100px;
+    height:40px;
 }
 
 .file-link{
@@ -459,7 +474,7 @@ input[type="number"]{
                                     <input type="hidden" name="submission_id" value="<?= $sub['id'] ?>">
                                     <input type="number" name="grade" placeholder="Grade"
                                         value="<?= $sub['grade'] ?>" class="grade-box">
-                                    <button class="btn">Save</button>
+                                    <button name="submit_grade" class="btn">Save</button>
                                 </form>
                             </div>
                         <?php endforeach; ?>
