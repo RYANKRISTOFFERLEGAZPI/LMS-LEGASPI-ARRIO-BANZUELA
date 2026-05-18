@@ -47,7 +47,7 @@ class StudentModel {
      * @return array Returns an array of enrolled students (id, full_name, username)
      * @throws PDOException If the query execution fails
      */
-    public function getStudentsByCourse(int $courseId): array {
+    public function getStudentsByCourse($courseId): array {
         $sql = "
             SELECT 
                 users.id,

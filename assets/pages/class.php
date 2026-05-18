@@ -27,6 +27,10 @@ $userType = $user['type'] ?? null;
 $isFaculty = ($userType === 'faculty');
 $isStudent = ($userType === 'student');
 
+$file = isset($_GET['file']) ? basename($_GET['file']) : '';
+$filePath = "documents/" . $file;
+$ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
 $students =$studentModel->getStudentsByCourse($courseId);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -170,6 +174,7 @@ body{
 
 .sidebar{
     width:260px;
+    height: 100vh;
     background:linear-gradient(180deg, #2c3e50, #1f2a36);
     color:white;
     padding:25px;
