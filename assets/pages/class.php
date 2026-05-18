@@ -145,8 +145,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $submissionId = $_POST['submission_id'];
         $grade = $_POST['grade'];
 
-        $stmt = $conn->prepare("UPDATE submissions SET grade = ? WHERE id = ?");
-        $stmt->execute([$grade, $submissionId]);
+        $grade = $_POST['grade'];
+
+        if ($grade >= 0 && $grade <= 100) {
+            $stmt = $conn->prepare("UPDATE submissions SET grade = ? WHERE id = ?");
+            $stmt->execute([$grade, $submissionId]);
+        } else {
+            $error[] = "Grade must be between 0 and 100.";
+        }
 
         header("Location: " . $_SERVER['REQUEST_URI']);
         exit;
@@ -179,6 +185,7 @@ $activities = $stmt->fetchAll();
 }
 
 body{
+    height: 100vh;
     display:flex;
     background:#f1f4f9;
     color:#2c3e50;
@@ -186,11 +193,10 @@ body{
 
 .sidebar{
     width:260px;
-    height: 100vh;
+    height:100%;
     background:linear-gradient(180deg, #2c3e50, #1f2a36);
     color:white;
     padding:25px;
-    overflow-y: auto;
 }
 
 .sidebar h2{
@@ -253,6 +259,8 @@ body{
 
 .students-card, .attachment-card{
     background:white;
+    height: 270px;
+    overflow-y: scroll;
     padding:20px;
     border-radius:12px;
     margin-bottom:20px;

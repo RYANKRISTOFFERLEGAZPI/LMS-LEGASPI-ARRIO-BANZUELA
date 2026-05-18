@@ -176,7 +176,7 @@ class CourseModel {
      * @return array|false The course data or false if not found
      * @throws PDOException If the query execution fails
      */
-    public function getById(int $id) {
+    public function getById($id) {
         $stmt = $this->conn->prepare(
             "SELECT id, name, section, code FROM courses WHERE id = ?"
         );

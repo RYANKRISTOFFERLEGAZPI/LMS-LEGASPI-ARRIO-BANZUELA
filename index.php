@@ -128,28 +128,6 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
             $_SESSION['error'] = implode("<br>", $result['errors']);
         }
     }
-
-    if ($action === 'create_announcement') {
-
-        if ($isFaculty) {
-            $data = [
-                "content" => $_POST["content"] ?? '',
-                "course_id" => $_POST["course_id"] ?? 0,
-                "course_name" => $courseModel->getById($_POST["course_id"] ?? 0)['name'] ?? 'Unknown Course'
-            ];
-
-            $result = $announcementController->createAnnouncement($data, $user['id']);
-
-            if ($result['success']) {
-                $_SESSION['success'] = $result['message'];
-            } else {
-                $_SESSION['error'] = implode("<br>", $result['errors']);
-            }
-        } else {
-            $_SESSION['error'] = 'Only faculty can post announcements.';
-        }
-    }
-
     header("Location: " . $_SERVER['PHP_SELF']);
     exit;
 }
@@ -390,29 +368,6 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
     </div>
 </div>
 
-<!-- ================= ANNOUNCEMENT MODAL ================= -->
-<div id="announcement" class="modal">
-    <div class="modal-content">
-        <form method="POST">
-            <input type="hidden" name="action" value="create_announcement">
-
-            <select name="course_id" required>
-                <?php foreach ($courses as $course): ?>
-                    <option value="<?php echo $course['id']; ?>">
-                        <?php echo htmlspecialchars($course['name']); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-
-            <textarea class="text-area" name="content" placeholder="Write announcement..." required></textarea>
-
-            <button class="btn">Post Announcement</button>
-            <button class="btn" onclick="document.getElementById('announcement').style.display='none'">
-                Close
-            </button>
-        </form>
-    </div>
-</div>
 <!-- ================= REGISTER MODAL ================= -->
 <div id="register-modal" class="modal">
     <div class="modal-content">
