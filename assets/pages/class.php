@@ -450,7 +450,7 @@ input[type="number"]{
                     <!-- ================= SHOW SUBMISSIONS ================= -->
                     <?php
                         $stmt = $conn->prepare("
-                            SELECT s.*, u.username 
+                            SELECT s.*, u.full_name 
                             FROM submissions s
                             JOIN users u ON u.id = s.student_id
                             WHERE s.activity_id = ?
@@ -464,7 +464,7 @@ input[type="number"]{
 
                         <?php foreach ($subs as $sub): ?>
                             <div style="margin-bottom:10px;">
-                                <strong><?= htmlspecialchars($sub['username']) ?></strong>
+                                <strong><?= htmlspecialchars($sub['full_name']) ?></strong>
 
                                 <a href="../../uploads/<?= $sub['file_path'] ?>" target="_blank">
                                     View
