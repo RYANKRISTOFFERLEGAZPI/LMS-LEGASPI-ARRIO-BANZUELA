@@ -31,8 +31,8 @@ CREATE TABLE enrollments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     course_id INT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ,
+    FOREIGN KEY (course_id) REFERENCES courses(id)  
 );
 
 CREATE TABLE announcements (
@@ -41,8 +41,10 @@ CREATE TABLE announcements (
     course_name VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     created_by INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(id)
 );
+
 
 CREATE TABLE attachments (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -50,7 +52,8 @@ CREATE TABLE attachments (
     file_name VARCHAR(255),
     file_path VARCHAR(255),
     uploaded_by INT,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(id) 
 );
 
 CREATE TABLE activities (
@@ -61,7 +64,9 @@ CREATE TABLE activities (
     file_name VARCHAR(255),
     file_path VARCHAR(255),
     created_by INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(id),  
+    FOREIGN KEY (created_by) REFERENCES users(id)  
 );
 
 CREATE TABLE submissions (
@@ -71,5 +76,7 @@ CREATE TABLE submissions (
     file_name VARCHAR(255),
     file_path VARCHAR(255),
     grade INT DEFAULT NULL,
-    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES users(id),
+    FOREIGN KEY (activity_id) REFERENCES activities(id)  
 );
